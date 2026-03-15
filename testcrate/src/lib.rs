@@ -1,3 +1,5 @@
+#![cfg_attr(target_os = "none", no_std)]
+
 use core::ffi::{c_char, c_int, c_long, c_void};
 
 extern "C" {

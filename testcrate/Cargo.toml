@@ -5,12 +5,25 @@ authors = ["Aleksandr Orlenko <zxteam@protonmail.com>"]
 edition = "2021"
 publish = false
 
+[[bin]]
+name = "qemu-testcrate"
+path = "src/bin/qemu.rs"
+test = false
+required-features = ["qemu"]
+
 [features]
+qemu = []
 lua54 = []
 lua53 = []
 lua52 = []
 lua51 = []
 
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-sys = "0.37.2"
+
 [build-dependencies.lua-src]
 path = ".."
 features = ["ucid"]
+
+[build-dependencies]
+embuild = "0.33"
