@@ -17,9 +17,22 @@ runs:
   using: composite
   steps:
     - uses: dtolnay/rust-toolchain@stable
+      if: ${{ !startsWith(inputs.target, 'xtensa-esp32') }}
       with:
         target: ${{ inputs.target }}
-    - run: echo "CARGO_BUILD_TARGET=${{ matrix.target }}" >> $GITHUB_ENV
+    - uses: esp-rs/xtensa-toolchain@v1.6.0
+      if: ${{ inputs.target == 'xtensa-esp32-none-elf' }}
+      with:
+        buildtargets: esp32
+    - uses: esp-rs/xtensa-toolchain@v1.6.0
+      if: ${{ inputs.target == 'xtensa-esp32s2-none-elf' }}
+      with:
+        buildtargets: esp32s2
+    - uses: esp-rs/xtensa-toolchain@v1.6.0
+      if: ${{ inputs.target == 'xtensa-esp32s3-none-elf' }}
+      with:
+        buildtargets: esp32s3
+    - run: echo "CARGO_BUILD_TARGET=${{ inputs.target }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Install GCC (i686-unknown-linux-gnu)
