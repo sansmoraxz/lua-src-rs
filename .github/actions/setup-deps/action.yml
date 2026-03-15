@@ -61,9 +61,6 @@ runs:
         echo "CC_xtensa_esp32s3_none_elf=xtensa-esp32s3-elf-gcc" >> $GITHUB_ENV
         echo "AR_xtensa_esp32s3_none_elf=xtensa-esp32s3-elf-gcc-ar" >> $GITHUB_ENV
       shell: bash
-    - run: echo "CARGO_BUILD_TARGET=${{ inputs.target }}" >> $GITHUB_ENV
-      shell: bash
-
     - name: Install GCC (i686-unknown-linux-gnu)
       if: ${{ inputs.target == 'i686-unknown-linux-gnu' }}
       run: |
