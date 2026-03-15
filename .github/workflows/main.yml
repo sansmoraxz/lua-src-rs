@@ -170,6 +170,12 @@ jobs:
           grep -q "LUA_SRC_QEMU_OK lua=${lua}" "$LOG_FILE"
         done
       shell: bash
+    - name: Upload QEMU logs
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: xtensa-esp32-espidf-qemu-logs
+        path: target/qemu/*.log
 
   rustfmt:
     name: Rustfmt
