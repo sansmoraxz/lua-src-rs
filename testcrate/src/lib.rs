@@ -1,4 +1,4 @@
-use std::os::raw::{c_char, c_int, c_long, c_void};
+use core::ffi::{c_char, c_int, c_long, c_void};
 
 extern "C" {
     pub fn luaL_newstate() -> *mut c_void;
@@ -53,14 +53,14 @@ pub unsafe fn lua_pcall(
     nresults: c_int,
     errfunc: c_int,
 ) -> c_int {
-    lua_pcallk(state, nargs, nresults, errfunc, 0, std::ptr::null())
+    lua_pcallk(state, nargs, nresults, errfunc, 0, core::ptr::null())
 }
 
 pub unsafe fn to_string<'a>(state: *mut c_void, index: c_int) -> &'a str {
     let mut len: c_long = 0;
     let ptr = lua_tolstring(state, index, &mut len);
-    let bytes = std::slice::from_raw_parts(ptr as *const u8, len as usize);
-    std::str::from_utf8(bytes).unwrap()
+    let bytes = core::slice::from_raw_parts(ptr as *const u8, len as usize);
+    core::str::from_utf8(bytes).unwrap()
 }
 
 #[cfg(test)]
