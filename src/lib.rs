@@ -155,7 +155,17 @@ impl Build {
                 config.define("LUA_USE_WINDOWS", None);
             }
             _ if target.contains("xtensa-esp32") => {
+                let tool_prefix = if target.contains("xtensa-esp32s2") {
+                    "xtensa-esp32s2-elf"
+                } else if target.contains("xtensa-esp32s3") {
+                    "xtensa-esp32s3-elf"
+                } else {
+                    "xtensa-esp32-elf"
+                };
+
                 config
+                    .compiler(format!("{tool_prefix}-gcc"))
+                    .archiver(format!("{tool_prefix}-gcc-ar"))
                     .define("LUA_32BITS", None) // Use 32-bit integers and size_t
                     .define("LUA_C89_NUMBERS", None) // Use C89 for better compatibility
                     .flag("-fexceptions")
