@@ -25,6 +25,11 @@ runs:
       with:
         buildtargets: esp32
     - uses: esp-rs/xtensa-toolchain@v1.6.0
+      if: ${{ inputs.target == 'xtensa-esp32-espidf' }}
+      with:
+        buildtargets: esp32
+        ldproxy: true
+    - uses: esp-rs/xtensa-toolchain@v1.6.0
       if: ${{ inputs.target == 'xtensa-esp32s2-none-elf' }}
       with:
         buildtargets: esp32s2
@@ -32,6 +37,30 @@ runs:
       if: ${{ inputs.target == 'xtensa-esp32s3-none-elf' }}
       with:
         buildtargets: esp32s3
+    - name: Configure Xtensa compiler (xtensa-esp32-none-elf)
+      if: ${{ inputs.target == 'xtensa-esp32-none-elf' }}
+      run: |
+        echo "CC_xtensa_esp32_none_elf=xtensa-esp32-elf-gcc" >> $GITHUB_ENV
+        echo "AR_xtensa_esp32_none_elf=xtensa-esp32-elf-gcc-ar" >> $GITHUB_ENV
+      shell: bash
+    - name: Configure Xtensa compiler (xtensa-esp32-espidf)
+      if: ${{ inputs.target == 'xtensa-esp32-espidf' }}
+      run: |
+        echo "CC_xtensa_esp32_espidf=xtensa-esp32-elf-gcc" >> $GITHUB_ENV
+        echo "AR_xtensa_esp32_espidf=xtensa-esp32-elf-gcc-ar" >> $GITHUB_ENV
+      shell: bash
+    - name: Configure Xtensa compiler (xtensa-esp32s2-none-elf)
+      if: ${{ inputs.target == 'xtensa-esp32s2-none-elf' }}
+      run: |
+        echo "CC_xtensa_esp32s2_none_elf=xtensa-esp32s2-elf-gcc" >> $GITHUB_ENV
+        echo "AR_xtensa_esp32s2_none_elf=xtensa-esp32s2-elf-gcc-ar" >> $GITHUB_ENV
+      shell: bash
+    - name: Configure Xtensa compiler (xtensa-esp32s3-none-elf)
+      if: ${{ inputs.target == 'xtensa-esp32s3-none-elf' }}
+      run: |
+        echo "CC_xtensa_esp32s3_none_elf=xtensa-esp32s3-elf-gcc" >> $GITHUB_ENV
+        echo "AR_xtensa_esp32s3_none_elf=xtensa-esp32s3-elf-gcc-ar" >> $GITHUB_ENV
+      shell: bash
     - run: echo "CARGO_BUILD_TARGET=${{ inputs.target }}" >> $GITHUB_ENV
       shell: bash
 
@@ -58,6 +87,29 @@ runs:
       run: |
         sudo apt-get update -y
         sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
+      shell: bash
+    - name: Install ESP-IDF/QEMU deps (xtensa-esp32-espidf)
+      if: ${{ inputs.target == 'xtensa-esp32-espidf' }}
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y --no-install-recommends \
+          bison \
+          ccache \
+          dfu-util \
+          flex \
+          gperf \
+          libffi-dev \
+          libgcrypt20 \
+          libglib2.0-0 \
+          libpixman-1-0 \
+          libsdl2-2.0-0 \
+          libslirp0 \
+          libssl-dev \
+          libusb-1.0-0 \
+          libxml2 \
+          ninja-build \
+          python3-pip \
+          python3-venv
       shell: bash
 
     - name: Install emscripten (wasm32-unknown-emscripten)

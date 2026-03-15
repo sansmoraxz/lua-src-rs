@@ -58,7 +58,14 @@ jobs:
         target: ${{ matrix.target }}
     - name: Build ${{ matrix.lua }}
       run: |
-        cargo build --manifest-path testcrate/Cargo.toml --release --features ${{ matrix.lua }} --target ${{ matrix.target }}
+        case "${{ matrix.target }}" in
+          xtensa-esp32*-none-elf)
+            cargo +esp build -Zbuild-std=core,alloc --manifest-path testcrate/Cargo.toml --release --lib --features ${{ matrix.lua }} --target ${{ matrix.target }}
+            ;;
+          *)
+            cargo build --manifest-path testcrate/Cargo.toml --release --lib --features ${{ matrix.lua }} --target ${{ matrix.target }}
+            ;;
+        esac
       shell: bash
 
   test:
@@ -95,7 +102,7 @@ jobs:
         target: ${{ matrix.target }}
     - name: Run ${{ matrix.lua }} tests
       run: |
-        cargo test --manifest-path testcrate/Cargo.toml --release --features ${{ matrix.lua }} --target ${{ matrix.target }}
+        cargo test --manifest-path testcrate/Cargo.toml --release --lib --features ${{ matrix.lua }} --target ${{ matrix.target }}
       shell: bash
 
   test_standalone:
@@ -119,6 +126,53 @@ jobs:
     - name: Run standalone tests
       run: |
         cargo test
+
+  test_xtensa_esp32_qemu:
+    name: Test xtensa-esp32-espidf (QEMU)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - uses: ./.github/actions/setup-deps
+      with:
+        target: xtensa-esp32-espidf
+    - name: Install espflash
+      run: |
+        cargo install espflash --locked
+      shell: bash
+    - name: Run Lua tests under ESP32 QEMU
+      env:
+        ESP_IDF_TOOLS_INSTALL_DIR: workspace
+        IDF_TOOLS_PATH: ${{ github.workspace }}/.embuild/espressif
+        MCU: esp32
+      run: |
+        set -euo pipefail
+        cargo +esp build -Zbuild-std=std,panic_abort --manifest-path testcrate/Cargo.toml --release --bin qemu-testcrate --features lua54,qemu --target xtensa-esp32-espidf
+        IDF_TOOLS_PY="$(find .embuild/espressif/esp-idf -path '*/tools/idf_tools.py' -print -quit)"
+        if [ -z "$IDF_TOOLS_PY" ]; then
+          echo "Failed to locate idf_tools.py"
+          exit 1
+        fi
+        python3 "$IDF_TOOLS_PY" --non-interactive install qemu-xtensa
+        QEMU_BIN="$(find "$IDF_TOOLS_PATH/tools/qemu-xtensa" -path '*/qemu/bin/qemu-system-xtensa' -print -quit)"
+        if [ -z "$QEMU_BIN" ]; then
+          echo "Failed to locate qemu-system-xtensa"
+          exit 1
+        fi
+        mkdir -p target/qemu
+        for lua in lua54 lua53 lua52 lua51; do
+          cargo +esp build -Zbuild-std=std,panic_abort --manifest-path testcrate/Cargo.toml --release --bin qemu-testcrate --features "${lua},qemu" --target xtensa-esp32-espidf
+          espflash save-image --chip esp32 --merge target/xtensa-esp32-espidf/release/qemu-testcrate "target/qemu/${lua}.bin"
+          LOG_FILE="target/qemu/${lua}.log"
+          set +e
+          timeout --signal=TERM 90 "$QEMU_BIN" -nographic -machine esp32 -drive file="target/qemu/${lua}.bin",if=mtd,format=raw -m 4M | tee "$LOG_FILE"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ] && [ "$status" -ne 143 ]; then
+            exit "$status"
+          fi
+          grep -q "LUA_SRC_QEMU_OK lua=${lua}" "$LOG_FILE"
+        done
+      shell: bash
 
   rustfmt:
     name: Rustfmt
